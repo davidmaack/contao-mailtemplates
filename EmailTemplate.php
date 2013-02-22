@@ -74,6 +74,18 @@ class EmailTemplate extends Controller
 	 * @var array
 	 */
 	protected $arrActiveLanguageData;
+	
+	/**
+	 * Contains the cc recipients
+	 * @var array
+	 */
+	protected $arrCc = array();
+	
+	/**
+	 * Contains the Bcc recipients
+	 * @var array
+	 */
+	protected $arrBcc = array();
 
 	/**
 	 * @param int $intId
@@ -159,6 +171,56 @@ class EmailTemplate extends Controller
 		}
 	}
 
+
+	/**
+	 * Adds one or more recipients to cc
+	 * @param string or array $bcc
+	 */
+	public function addBcc($bcc)
+	{
+		if (empty($bcc)) return;
+		
+		// recipient_bcc
+		foreach ((array)trimsplit(',', $bcc) as $email)
+		{
+			if ($email == '' || !$this->isValidEmailAddress($email))
+				continue;
+
+			$this->arrBcc[] = $email;
+		}
+		
+		array_unique($this->arrBcc);
+		
+		if (!empty($this->arrBcc))
+		{
+			$this->objEmail->sendBcc($this->arrBcc);
+		}
+	}
+	
+	/**
+	 * Adds one or more recipients to cc
+	 * @param string or array $bcc
+	 */
+	public function addCc($cc)
+	{
+		if (empty($cc)) return;
+		
+		// recipient_bcc
+		foreach ((array)trimsplit(',', $cc) as $email)
+		{
+			if ($email == '' || !$this->isValidEmailAddress($email))
+				continue;
+
+			$this->arrCc[] = $email;
+		}
+		
+		array_unique($this->arrCc);
+		
+		if (!empty($this->arrCc))
+		{
+			$this->objEmail->sendCc($this->arrCc);
+		}
+	}
 
 	/**
 	 * Send to give address with tokens
@@ -319,35 +381,10 @@ class EmailTemplate extends Controller
 		$this->objEmail->priority = $objTemplate->priority;
 
 		// recipient_cc
-		$arrCc = array();
-		foreach ((array)trimsplit(',', $objTemplate->recipient_cc) as $email)
-		{
-			if ($email == '' || !$this->isValidEmailAddress($email))
-				continue;
-
-			$arrCc[] = $email;
-		}
-
-		if (!empty($arrCc))
-		{
-			$this->objEmail->sendCc($arrCc);
-		}
+		$this->addCc($objTemplate->recipient_cc);
 
 		// recipient_bcc
-		$arrBcc = array();
-		foreach ((array)trimsplit(',', $objTemplate->recipient_bcc) as $email)
-		{
-			if ($email == '' || !$this->isValidEmailAddress($email))
-				continue;
-
-			$arrBcc[] = $email;
-		}
-
-		if (!empty($arrBcc))
-		{
-			$this->objEmail->sendBcc($arrBcc);
-		}
-
+		$this->addBcc($objTemplate->recipient_bcc);
 
 		// template attachments
 		$this->arrAttachments = deserialize($objTemplate->attachments, true);
